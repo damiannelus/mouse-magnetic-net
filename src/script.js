@@ -42,11 +42,69 @@ window.addEventListener('resize', () =>
 * Camera
 */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 500 );
+camera.position.set( 0, 0, 100 );
+camera.lookAt( 0, 0, 0 );
+
+// settings
+const settings = {
+  connectionLenght: 10,
+  numberOfNodes: 3
+}
 
 // Controls
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
+
+// Axes helper
+const axesHelper = new THREE.AxesHelper( 5 );
+scene.add( axesHelper );
+
+/**
+ * The experiment
+ */
+
+const sphereGeometry = new THREE.SphereGeometry(1, 32, 16)
+const sphereMaterial = new THREE.MeshBasicMaterial({color: 'blue'})
+
+const lineMaterial = new THREE.LineBasicMaterial({color: 'red'})
+const points = [];
+
+for (let i = - settings.numberOfNodes/2; i < settings.numberOfNodes/2; i++) {
+  for (let j = - settings.numberOfNodes/2; j < settings.numberOfNodes/2; j++) {
+    points.push( new THREE.Vector3( i*settings.connectionLenght, j*settings.connectionLenght, 0 ) );
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
+    sphere.position.set(i*settings.connectionLenght, j*settings.connectionLenght, 0)
+    scene.add(sphere)
+  }
+}
+for (let i = 0; i < settings.numberOfNodes; i++) {
+  for (let j = 0; j < settings.numberOfNodes; j++) {
+    const linesToAdd = []
+    if (points[i*settings.numberOfNodes + j + 1]) {
+      const horizontalLineGeometry = new THREE.BufferGeometry().setFromPoints([
+        points[i*settings.numberOfNodes + j],
+        points[i*settings.numberOfNodes + j+1]
+      ]);
+      const horizontalLine = new THREE.Line(horizontalLineGeometry, lineMaterial)
+      linesToAdd.push(horizontalLine)
+    }
+    if (points[(i+1)*settings.numberOfNodes + j]) {
+      const verticalLineGeometry = new THREE.BufferGeometry().setFromPoints([
+        points[i*settings.numberOfNodes + j],
+        points[(i+1)*settings.numberOfNodes + j]
+      ]);
+      const verticalLine = new THREE.Line(verticalLineGeometry, lineMaterial)
+      linesToAdd.push(verticalLine)
+    }
+    if (linesToAdd) {
+      scene.add(...linesToAdd)
+    }
+  }
+  
+}
+
+console.log('points :>> ', points);
 
 /**
  * Renderer

@@ -81,7 +81,7 @@ for (let i = - settings.numberOfNodes/2; i < settings.numberOfNodes/2; i++) {
 for (let i = 0; i < settings.numberOfNodes; i++) {
   for (let j = 0; j < settings.numberOfNodes; j++) {
     const linesToAdd = []
-    if (points[i*settings.numberOfNodes + j + 1]) {
+    if (j%settings.numberOfNodes != settings.numberOfNodes-1) {
       const horizontalLineGeometry = new THREE.BufferGeometry().setFromPoints([
         points[i*settings.numberOfNodes + j],
         points[i*settings.numberOfNodes + j+1]
@@ -89,7 +89,7 @@ for (let i = 0; i < settings.numberOfNodes; i++) {
       const horizontalLine = new THREE.Line(horizontalLineGeometry, lineMaterial)
       linesToAdd.push(horizontalLine)
     }
-    if (points[(i+1)*settings.numberOfNodes + j]) {
+    if (i%settings.numberOfNodes != settings.numberOfNodes-1) {
       const verticalLineGeometry = new THREE.BufferGeometry().setFromPoints([
         points[i*settings.numberOfNodes + j],
         points[(i+1)*settings.numberOfNodes + j]

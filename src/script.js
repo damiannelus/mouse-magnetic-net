@@ -48,8 +48,8 @@ camera.lookAt( 0, 0, 0 );
 
 // settings
 const settings = {
-  connectionLenght: 10,
-  numberOfNodes: 3
+  numberOfNodes: 16,
+  connectionLenght: (Math.min(sizes.width, sizes.height) * 0.8) / 100,
 }
 
 // Controls
@@ -80,6 +80,7 @@ for (let i = - settings.numberOfNodes/2; i < settings.numberOfNodes/2; i++) {
 }
 for (let i = 0; i < settings.numberOfNodes; i++) {
   for (let j = 0; j < settings.numberOfNodes; j++) {
+    console.log(`i: ${i}, j: ${j}`);
     const linesToAdd = []
     if (j%settings.numberOfNodes != settings.numberOfNodes-1) {
       const horizontalLineGeometry = new THREE.BufferGeometry().setFromPoints([
@@ -97,12 +98,13 @@ for (let i = 0; i < settings.numberOfNodes; i++) {
       const verticalLine = new THREE.Line(verticalLineGeometry, lineMaterial)
       linesToAdd.push(verticalLine)
     }
-    if (linesToAdd) {
+    if (linesToAdd.length > 0) {
       scene.add(...linesToAdd)
     }
   }
-  
 }
+
+// console.log('scene :>> ', scene);
 
 console.log('points :>> ', points);
 

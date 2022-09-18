@@ -42,14 +42,24 @@ window.addEventListener('resize', () =>
 * Camera
 */
 // Base camera
-const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 500 );
+// const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 500 );
+// TODO the orthographic camera should be propery set up
+const camera = new THREE.OrthographicCamera( 
+  window.innerWidth / - 10, 
+  window.innerWidth / 10, 
+  window.innerHeight / 10, 
+  window.innerHeight / - 10, 
+  1, 
+  1000 );
 camera.position.set( 0, 0, 100 );
-camera.lookAt( 0, 0, 0 );
+camera.lookAt( 0, 0, 100 );
 
 // settings
 const settings = {
-  numberOfNodes: 16,
+  numberOfNodes: 3,
   connectionLenght: (Math.min(sizes.width, sizes.height) * 0.8) / 100,
+  sphereRadius: 1
+
 }
 
 // Controls
@@ -60,27 +70,53 @@ controls.enableDamping = true
 const axesHelper = new THREE.AxesHelper( 5 );
 scene.add( axesHelper );
 
+// Raycaster
+const raycaster = new THREE.Raycaster()
+
+/**
+ * Mouse
+ */
+ const mouse = new THREE.Vector2()
+
+ window.addEventListener('mousemove', (event) =>
+ {
+     mouse.x = event.clientX / sizes.width * 2 - 1
+     mouse.y = - (event.clientY / sizes.height) * 2 + 1
+  })
+
 /**
  * The experiment
  */
 
-const sphereGeometry = new THREE.SphereGeometry(1, 32, 16)
+const sphereGeometry = new THREE.SphereGeometry(settings.sphereRadius, 32, 16)
 const sphereMaterial = new THREE.MeshBasicMaterial({color: 'blue'})
+const touchableSphereGeometry = new THREE.SphereGeometry(settings.sphereRadius * 1.75, 32, 16)
+const touchableSphereMaterial = new THREE.MeshBasicMaterial({color: 'green'})
 
 const lineMaterial = new THREE.LineBasicMaterial({color: 'red'})
 const points = [];
+const sphereGroup = new THREE.Group()
+sphereGroup.name = "sphereGroup"
+const touchableSphereGroup = new THREE.Group()
+touchableSphereGroup.name = "touchableSphereGroup"
 
 for (let i = - settings.numberOfNodes/2; i < settings.numberOfNodes/2; i++) {
   for (let j = - settings.numberOfNodes/2; j < settings.numberOfNodes/2; j++) {
     points.push( new THREE.Vector3( i*settings.connectionLenght, j*settings.connectionLenght, 0 ) );
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
+    const touchableSphere = new THREE.Mesh(touchableSphereGeometry, touchableSphereMaterial)
+    // touchableSphere.visible = false
     sphere.position.set(i*settings.connectionLenght, j*settings.connectionLenght, 0)
-    scene.add(sphere)
+    touchableSphere.position.set(i*settings.connectionLenght, j*settings.connectionLenght, -1)
+    sphereGroup.add(sphere)
+    touchableSphereGroup.add(touchableSphere)
   }
 }
+scene.add(sphereGroup)
+scene.add(touchableSphereGroup)
+
 for (let i = 0; i < settings.numberOfNodes; i++) {
   for (let j = 0; j < settings.numberOfNodes; j++) {
-    console.log(`i: ${i}, j: ${j}`);
     const linesToAdd = []
     if (j%settings.numberOfNodes != settings.numberOfNodes-1) {
       const horizontalLineGeometry = new THREE.BufferGeometry().setFromPoints([
@@ -104,10 +140,6 @@ for (let i = 0; i < settings.numberOfNodes; i++) {
   }
 }
 
-// console.log('scene :>> ', scene);
-
-console.log('points :>> ', points);
-
 /**
  * Renderer
  */
@@ -122,9 +154,51 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
  const clock = new THREE.Clock()
 
+ let currentIntersect = null
+
  const tick = () =>
  {
      const elapsedTime = clock.getElapsedTime()
+
+    //  Check interaction
+    raycaster.setFromCamera(mouse, camera)
+    const intersects = raycaster.intersectObjects(touchableSphereGroup.children)
+
+    if(intersects.length)
+    {
+        if(!currentIntersect)
+        {
+            // console.log('mouse enter')
+        }
+
+        currentIntersect = intersects[0]
+
+
+        for (let i = 0; i < touchableSphereGroup.children.length; i++) {
+          if (touchableSphereGroup.children[i] === currentIntersect.object) {
+            console.log('touchableSphereGroup.children[i] :>> ', touchableSphereGroup.children[i]);
+            const newPositionVector = new THREE.Vector3(mouse.x, mouse.y, 0)
+            const dis = touchableSphereGroup.children[i].position.distanceTo(newPositionVector)
+            console.log('dis :>> ', dis);
+            newPositionVector.unproject(camera)
+            const dir = newPositionVector.sub(camera.position).normalize()
+            const distance = - camera.position.z / dir.z
+            const newPosition = camera.position.clone().add(dir.multiplyScalar(distance))
+            sphereGroup.children[i].position.set(newPosition.x, newPosition.y, 0)
+            console.log("brawo");
+          }
+          
+        }
+    }
+    else
+    {
+        if(currentIntersect)
+        {
+            // console.log('mouse leave')
+        }
+        
+        currentIntersect = null
+    }
  
      // Update controls
      controls.update()
